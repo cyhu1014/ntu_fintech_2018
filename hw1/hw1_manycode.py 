@@ -1,0 +1,146 @@
+import sys
+ 
+import pandas as pd
+ 
+ 
+def main(filename):
+    df = pd.read_csv(filename, encoding='big5', dtype=str)
+ 
+    # only deal with '商品代號' == 'TX'
+    df = df[df['商品代號'].apply(lambda r: r.strip()) == 'TX']
+ 
+    # only deal with '成交時間' in [084500, 134500]
+    df = df[(df['成交時間'] >= '084500') & (df['成交時間'] <= '134500')]
+ 
+    # only deal with most recent '到期月份'
+    df = df[df[df.columns[2]] == df[df.columns[2]].min()]
+ 
+    prices = df['成交價格'].astype(int)
+ 
+    o = prices.iloc[0]
+    h = prices.max()
+    l = prices.min()
+    c = prices.iloc[-1]
+ 
+    return o, h, l, c
+ 
+ 
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    o, h, l, c = main(filename)
+ 
+    print(o, h, l, c)
+
+############################################
+############################################
+import pandas as pd
+import numpy as np
+import sys
+import calendar as cal
+ 
+argvs = sys.argv
+argc = len(argvs)
+ 
+df = pd.read_csv(argvs[1], encoding="big5",dtype=str)
+df = df[df.商品代號 == "TX     "]
+df = df[df.成交時間 >= "084500" ]
+df = df[df.成交時間 <= "134500"]
+year    = int((df.iat[0,0])[0:4])
+month   = int((df.iat[0,0])[4:6])
+day     = int((df.iat[0,0])[6:8])
+nn = 17
+k = cal.weekday(year, month, 1)
+if(k > 2):
+    nn += 7
+nn -= k
+if(day > nn):
+    month+=1
+if month < 10:
+    date = str(year)+"0"+str(month)+"     "
+else:
+    date = str(year)+str(month)+"     "
+df.drop(df.loc[df['到期月份(週別)'] != date].index,inplace = True)
+df = df.sort_values(by=['成交時間'])
+O = df.iat[0,4]
+C = df.iat[-1,4]
+df = df.sort_values(by=['成交價格'])
+L = df.iat[0,4]
+H = df.iat[-1,4]
+print(O + " " + H + " " + L + " "+ C)
+
+##################################
+#############################
+import pandas as pd
+import sys
+from datetime import datetime
+ 
+def getContractMonth(d):
+    order_datetime = datetime.strptime(d, '%Y%m%d')
+    last_day = 15 + ((7 - (datetime(order_datetime.year, order_datetime.month, 15).weekday() - 2)) % 7)
+    if order_datetime.day <= last_day:
+        return str(order_datetime.year)+str(order_datetime.month).zfill(2)
+    else:
+        if order_datetime.month+1 > 12:
+            return str(order_datetime.year+1)+"01"
+        else:
+            return str(order_datetime.year)+str(order_datetime.month+1).zfill(2)
+ 
+df = pd.read_csv(sys.argv[1], encoding='big5', dtype=str)
+df.drop(df.columns[-4:], axis=1, inplace=True)
+df.iloc[:,1] = df.iloc[:,1].str.strip()
+df.iloc[:,2] = df.iloc[:,2].str.strip()
+ 
+filter_symbol = (df.iloc[:,1] == 'TX')
+filter_time = (df.iloc[:,3] >= '084500') & (df.iloc[:,3] <= '134500')
+df = df[filter_symbol & filter_time]
+ 
+filter_contract_month = (df.iloc[:,2] == getContractMonth(df.iloc[0,0]))
+df = df[filter_contract_month]
+ 
+print("{} {} {} {}".format(df.iloc[0,4], df.iloc[:,4].max(), df.iloc[:,4].min(), df.iloc[-1,4]))
+
+#####################################
+################################
+# coding: utf-8
+ 
+# In[1]:
+ 
+ 
+import pandas as pd
+import sys
+ 
+ 
+# In[34]:
+ 
+ 
+#raw = pd.read_csv('Daily_2018_09_28.csv', encoding='big5',dtype={'到期月份(週別)' : str,'商品代號' : str})
+ 
+ 
+# In[17]:
+ 
+ 
+raw = pd.read_csv(sys.argv[1], encoding='big5',dtype={'到期月份(週別)' : str,'商品代號' : str})
+ 
+ 
+# In[35]:
+ 
+ 
+mask1 = raw['商品代號'] == 'TX     '
+mask2 = raw['成交時間'] >= 84500
+mask3 = raw['成交時間'] <= 134500
+data = raw[mask1 & mask2 & mask3] 
+data = data.reset_index(drop=True)
+mask4 = data['到期月份(週別)'] == data.at[0,'到期月份(週別)']
+data = data[mask4]
+data = data.reset_index(drop=True)
+data['成交價格'] = data['成交價格'].astype(int)
+ 
+ 
+# In[36]:
+ 
+ 
+high = max(data['成交價格'])
+low = min(data['成交價格'])
+open_ = data.at[0,'成交價格']
+close = data.at[len(data)-1,'成交價格']
+print(open_,high,low,close)
