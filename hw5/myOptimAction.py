@@ -8,9 +8,10 @@
 def myOptimAction(priceVec, transFeeRate):
 	import numpy as np	
 	c= 1-transFeeRate
-	money = 10000
+	money = 100000
 	dataLen = len(priceVec)
 	actionVec = np.zeros(dataLen)
+	
 	moneyhold = []
 	stockhold = []
 	moneyptr  = [] #0 from money  ; 1 from stock
@@ -34,25 +35,26 @@ def myOptimAction(priceVec, transFeeRate):
 		else:
 			stockptr.append(0)
 			stockhold.append(moneyhold[i-1]/priceVec[i]*c)
-		print(i,moneyhold[i],stockhold[i])
-       
 
-        
-        
-	key=2
+	pointstock=1
 	for i in range (dataLen-1,-1,-1):
-		if (key==1 and moneyptr[i]==0):
+		if (pointstock==0 and moneyptr[i]==0):
 			actionVec[i]=0
-			key=1
-		elif( key==1 and moneyptr[i]==1):
+			pointstock=0
+		elif( pointstock==0 and moneyptr[i]==1):
 			actionVec[i]=-1
-			key=2
-		elif (key==2 and stockptr[i]==0):
+			pointstock=1
+		elif (pointstock==1 and stockptr[i]==0):
 			actionVec[i]=1
-			key=1
-		elif (key==2 and stockptr[i]==1):
+			pointstock=0
+		else:
 			actionVec[i]=0
-			key=2
-
-
+			pointstock=1
+	for i in range (dataLen-1,-1,-1):
+		if(actionVec[i]==0):
+			continue
+		elif(actionVec[i]==-1):
+			break
+		else:
+			actionVec[i]=-1
 	return actionVec
